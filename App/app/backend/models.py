@@ -21,17 +21,17 @@ def setup_db(app, database_path=database_path):
     db.create_all()
 
 '''
-Question
+Product
 
 '''
-class Question(db.Model):  
+class Product(db.Model):  
   __tablename__ = 'questions'
 
   id = Column(Integer, primary_key=True)
-  question = Column(String)
-  answer = Column(String)
-  category = Column(String)
-  difficulty = Column(Integer)
+  name = Column(String)
+  weight = Column(String)
+  quantity = Column(String)
+  date_purchased = Column(Integer)
 
   def __init__(self, question, answer, category, difficulty):
     self.question = question
