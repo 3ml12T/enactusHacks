@@ -19,7 +19,7 @@ section > h2 {
 }
 a {
   cursor: pointer;
-  color: #005D9A;
+  color: #A7D86D;
 }
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
   background: initial;
@@ -67,7 +67,7 @@ p.lead {
 .navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.active>a {
     background: none;
     box-shadow: none;
-    color: #005D9A;
+    color: #A7D86D;
     font-weight: bold;
 }
 .navbar-nav .search input {

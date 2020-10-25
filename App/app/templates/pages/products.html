@@ -1,15 +1,15 @@
 {% extends 'layouts/main.html' %}
-{% block title %}Productive | Customers{% endblock %}
+{% block title %}MyFridge | Products{% endblock %}
 {% block content %}
-{% for customer in customers %}
-<a href="/customers/{{ customer.id }}"><h3>{{ customer.name }}</h3></a>
+{% for product in products %}
+<a href="/products/{{ product.id }}"><h3>{{ product.name }}</h3></a>
 	<ul class="items">
-	{% for job in customer.jobs %}
+	{% for product in user.products %}
 		<li>
-			<a href="/jobs/{{ job.id }}">
+			<a href="/products/{{ product.id }}">
 				<i class="fas fa-toolbox"></i>
 				<div class="item">
-					<h5>{{ job.number }}</h5>
+					<h5>{{ product.name }}</h5>
 				</div>				
 			</a>
 		</li>

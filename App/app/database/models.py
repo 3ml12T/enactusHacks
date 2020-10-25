@@ -108,6 +108,7 @@ class Product(db.Model):
   weight = Column(String)
   quantity = Column(String)
   date_purchased = Column(Integer)
+  image_link = Column(String)
 
   def __init__(self, name, weight, quantity, date_purchased, description=''):
     self.name = name
