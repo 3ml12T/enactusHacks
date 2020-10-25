@@ -30,21 +30,21 @@ def create_app(test_config=None):
 
     @app.route('/')
     def home():
-        home_msg = 'Udacity Casting Agency'
+        home_msg = 'MyFridge App - Eat Clean, Clean Earth'
         return jsonify(home_msg)
 
     """GET /movies
-      Gets all movies in the database
+      Gets all products in the database
 
       Returns:
           JSON Object -- json of all movies in the database
     """
-    @app.route('/movies')
-    @requires_auth('get:movies')
-    def get_movies(payload):
+    @app.route('/products')
+    @requires_auth('get:products')
+    def get_products(payload):
 
         try:
-            movies = Movie.query.order_by('id').all()
+            products = Product.query.order_by('id').all()
             movies_list = [Movie.format(movie) for movie in movies]
             result = {
               'success': True,
@@ -63,8 +63,8 @@ def create_app(test_config=None):
           JSON Object -- json of all actors in the database
     """
     @app.route('/actors')
-    @requires_auth('get:actors')
-    def get_actors(payload):
+    @requires_auth('get:user')
+    def get_user(payload):
 
         try:
             actors = Actor.query.order_by('id').all()
@@ -98,7 +98,6 @@ def create_app(test_config=None):
         actors = []
 
         # Try to insert the movie in the database
-
         try:
 
             if 'actors' in body:

@@ -36,11 +36,12 @@ def db_drop_and_create_all():
     db.create_all()
 
 
-class MyFridge(db.Model):
-      
-      __tablename__ = 'fridge'
-      id = db.Column(db.Integer, primary_key=True)
-
+'''
+User-Product association table
+'''
+user_products = db.Table('user_products',     
+      db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+      db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True)
 
 '''
 User
