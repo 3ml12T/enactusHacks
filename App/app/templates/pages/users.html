@@ -1,0 +1,16 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Productive | Employees{% endblock %}
+{% block content %}
+<ul class="items">
+	{% for employee in employees %}
+	<li>
+		<a href="/employees/{{ employee.id }}">
+			<i class="fas fa-users"></i>
+			<div class="item">
+				<h5>{{ employee.first_name }} {{ employee.last_name }}</h5>
+			</div>
+		</a>
+	</li>
+	{% endfor %}
+</ul>
+{% endblock %}

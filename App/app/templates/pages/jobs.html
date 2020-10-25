@@ -1,0 +1,22 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Productive | Jobs{% endblock %}
+{% block content %}
+<div class="row jobs">
+    {%for job in jobs %}
+    <div class="col-lg-8">
+        <a href="/jobs/{{ job.id }}">
+            <button type="button" class="btn btn-primary btn-lg btn-block">
+                <i class="fas fa-toolbox"></i>
+                <h5>{{ job.number }}
+                    {% for customer in customers %}
+                    {% if customer.id == job.customer_id %}
+                     {{ " - " + customer.name }} 
+                    {% endif %}
+                    {% endfor %}
+                </h5>
+            </button>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
