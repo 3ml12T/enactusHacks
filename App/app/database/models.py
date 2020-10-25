@@ -85,10 +85,11 @@ class User(db.Model):
   def format(self):
     return {
       'id': self.id,
-      'name': self.name,
-      'weight': self.weight,
-      'quantity': self.quantity,
-      'date_purchased': self.date_purchased
+      'first_name': self.first_name,
+      'last_name': self.last_name,
+      'current_products': self.current_products,
+      'past_products': self.past_products,
+      'date_registered': self.date_registered
     }
 
   def __repr__(self):

@@ -48,50 +48,38 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">📈</a>
+          <a class="navbar-brand" href="/"></a>
         </div>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li>
-              {% if (request.endpoint == 'customers') or
-                (request.endpoint == 'search_customers') or
-                (request.endpoint == 'show_customers') %}
-              <form class="search" method="post" action="/customers/search">
+              {% if (request.endpoint == 'products') or
+                (request.endpoint == 'search_products') or
+                (request.endpoint == 'show_products') %}
+              <form class="search" method="post" action="/products/search">
                 <input class="form-control"
                   type="search"
                   name="search_term"
-                  placeholder="Find a customer"
+                  placeholder="Find a product"
                   aria-label="Search">
               </form>
               {% endif %}
-              {% if (request.endpoint == 'employees') or
-                (request.endpoint == 'search_employees') or
-                (request.endpoint == 'show_employees') %}
-              <form class="search" method="post" action="/employees/search">
+              {% if (request.endpoint == 'users') or
+                (request.endpoint == 'search_users') or
+                (request.endpoint == 'show_users') %}
+              <form class="search" method="post" action="/users/search">
                 <input class="form-control"
                   type="search"
                   name="search_term"
-                  placeholder="Find an employee"
+                  placeholder="Find a User"
                   aria-label="Search">
               </form>
               {% endif %}
-              {% if (request.endpoint == 'jobs') or
-              (request.endpoint == 'search_jobs') or
-              (request.endpoint == 'show_jobs') %}
-            <form class="search" method="post" action="/jobs/search">
-              <input class="form-control"
-                type="search"
-                name="search_term"
-                placeholder="Find a job"
-                aria-label="Search">
-            </form>
-            {% endif %}
             </li>
           </ul>
           <ul class="nav navbar-nav">
-            <li {% if request.endpoint == 'customers' %} class="active" {% endif %}><a href="{{ url_for('customers') }}">Customers</a></li>
-            <li {% if request.endpoint == 'employees' %} class="active" {% endif %}><a href="{{ url_for('employees') }}">Employees</a></li>
-            <li {% if request.endpoint == 'jobs' %} class="active" {% endif %}><a href="{{ url_for('jobs') }}">Jobs</a></li>
+            <li {% if request.endpoint == 'products' %} class="active" {% endif %}><a href="{{ url_for('get_products') }}">Products</a></li>
+            <li {% if request.endpoint == 'users' %} class="active" {% endif %}><a href="{{ url_for('get_users') }}">Users</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -119,7 +107,7 @@
 
   <div id="footer">
     <div class="container">
-      <p>Productive &copy; All Rights Reserved.</p>
+      <p>MyFridge &copy; All Rights Reserved.</p>
       {% block footer %}{% endblock %}
     </div>
   </div>

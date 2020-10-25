@@ -1,5 +1,7 @@
 
 import os
+import babel
+import dateutil.parser
 from flask import Flask, request, abort, jsonify, redirect
 from flask import url_for, render_template
 from flask import session
@@ -15,6 +17,8 @@ from six.moves.urllib.parse import urlencode
 from google.cloud import vision
 import io
 
+
+
 def create_app(test_config=None):
 
     app = Flask(__name__)
@@ -22,6 +26,21 @@ def create_app(test_config=None):
     CORS(app)
     #app.secret_key = os.environ['SECRET']
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=r"C:\Users\shahd\OneDrive\Desktop\MediDate Application\MediDate_Credentials\steel-aileron-266916-d88c69f449c7.json"
+
+    #----------------------------------------------------------------------------#
+    # Filters.
+    #----------------------------------------------------------------------------#
+
+    def format_datetime(value, format='medium'):
+        date = dateutil.parser.parse(value)
+        if format == 'full':
+            format="EEEE MMMM, d, y 'at' h:mma"
+        elif format == 'medium':
+            format="EE MM, dd, y h:mma"
+        return babel.dates.format_datetime(date, format)
+
+    app.jinja_env.filters['datetime'] = format_datetime
+
 
     '''
     @app.after_request
@@ -32,10 +51,289 @@ def create_app(test_config=None):
                              'GET, POST, DELETE, PATCH')
         return response
     '''
+
     @app.route('/')
     def home():
-        home_msg = 'MyFridge App - Eat Clean, Clean Earth'
-        return jsonify(home_msg)
+        return render_template('pages/home.html')
+
+
+
+    """GET /products
+      Gets all products in the database
+
+      Returns:
+          JSON Object -- json of all products in the database
+    """
+    @app.route('/products')
+    #@requires_auth('get:products')
+    def get_products(payload):
+
+        try:
+            products = Product.query.order_by('id').all()
+            products_list = [Product.format(product) for product in products]
+            result = {
+              'success': True,
+              'products': products_list
+            }
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """GET /users
+      Gets all users in the database
+
+      Returns:
+          JSON Object -- json of all users in the database
+    """
+    @app.route('/users')
+    #@requires_auth('get:user')
+    def get_users(payload):
+
+        try:
+            users = User.query.order_by('id').all()
+            users = [user.format() for user in users]
+
+            result = ({
+              'success': True,
+              'users': users
+            })
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """POST /products
+      Creates and adds a new movie to the database
+
+      Returns:
+          JSON Object -- json of movie added if the entry is successful
+    """
+    @app.route('/products', methods=['POST'])
+    #@requires_auth('post:movies')
+    def new_recipe(payload):
+
+        # Get request json object
+        body = request.get_json()
+        title = body['title']
+        release_date = datetime.strptime(body['release_date'],
+                                         '%d-%m-%Y').date()
+        actors = []
+
+        # Try to insert the movie in the database
+        try:
+
+            if 'products' in body:
+                for id in body['products']:
+                    product = Product.query.filter(
+                        Product.id == id).one_or_none()
+
+                    if product:
+                        products.append(product)
+
+            product_new = Product(title=title,
+                              release_date=release_date,
+                              actors=[])
+            movie_new.actors = [a for a in actors]
+            movie_new.insert()
+
+            result = {
+                'success': True,
+                'movie': movie_new.title
+            }
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """POST /users
+      Creates and adds a new user to the database
+
+      Returns:
+          JSON Object -- json of user added if the entry is successful
+    """
+    @app.route('/users', methods=['POST'])
+    #@requires_auth('post:user')
+    def new_user(payload):
+
+        # Get json request objects
+        body = request.get_json()
+
+        first_name = body.get('first_name', None)
+        last_name = body.get('last_name', None)
+        age = body.get('age', None)
+        gender = body.get('gender', None)
+        movies = []
+        # Try to insert the actor in the database
+        try:
+
+            # If movie_id was included in the post find the movie
+            if 'users' in body:
+                for movie_id in body['movies']:
+                    movie = Movie.query.filter(
+                        Movie.id == movie_id).one_or_none()
+
+                if movie:
+                    movies.append(movie)
+
+            actor_new = Actor(name=name, age=age, gender=gender)
+            actor_new.movies_list = [m for m in movies]
+            actor_new.insert()
+
+            result = {
+              'success': True,
+              'actor': actor_new.format()
+            }
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """'DELETE /products/<int:product_id>
+        Deletes a product from the database
+
+      Inputs:
+          int "product_id"
+
+      Returns:
+          JSON Object -- json message if deletion is successful
+    """
+    @app.route('/products/<int:product_id>', methods=['DELETE'])
+    #@requires_auth('delete:product')
+    def delete_movie(payload, product_id):
+
+        # Delete product with submitted id from database
+        try:
+            # Find product with product_id
+            product = Product.query.filter(Product.id == product_id).one_or_none()
+
+            # if product is none throw 404  
+            if product is None:
+                abort(404)
+
+            # Delete the product
+            product.delete()
+
+            result = {
+                'success': True,
+                'message': 'Deleted Product ID: ' + str(product_id)
+            }
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """'DELETE /users/<int:actor_id>
+      Deletes an actor from the database
+
+      Inputs:
+          int "actor_id"
+
+      Returns:
+          JSON Object -- json message if deletion is successful
+    """
+    @app.route('/users/<int:user_id>', methods=['DELETE'])
+    #@requires_auth('delete:user')
+    def delete_user(payload, user_id):
+
+        # Delete user with submitted id from database
+        try:
+
+            # Find user with user_id
+            user = User.query.filter(User.id == user_id).one_or_none()
+
+            # If actor is none throw 404
+            if user is None:
+                abort(404)
+
+            # Delete the actor
+            user.delete()
+
+            result = {
+                'success': True,
+                'message': 'Deleted User ID: ' + str(user_id)
+            }
+
+        except:
+            abort(422)
+
+        return jsonify(result)
+
+    """PATCH /products/<int:product_id>
+      Edits a recipe in the database
+
+      Inputs:
+          int "recipe_id"
+
+      Returns:
+          JSON Object -- json message if edit is successful
+    """
+    
+
+    @app.route('/products/<int:product_id>', methods=['PATCH'])
+    #@requires_auth('patch:product')
+    def edit_product(payload, product_id):
+
+        # Get the request info
+        body = request.get_json()
+
+        result = {
+            "success": True,
+            "recipe": 'FIXME!! Unimplemented'
+        }
+
+        return jsonify(result)
+    
+
+    """PATCH /users/<int:user_id>
+      Edits an user in the database
+
+      Inputs:
+          int "user_id"
+
+      Returns:
+          JSON Object -- json message if edit is successful
+    """
+    @app.route('/users/<int:user_id>', methods=['PATCH'])
+    #@requires_auth('patch:user')
+    def edit_user(payload, user_id):
+
+        # Get the request info
+        body = request.get_json()
+
+        # Check that actor id exists
+        user = User.query.filter_by(id=user_id).one_or_none()
+        if user is None:
+            abort(404)
+
+        # Check for updates to title and release date
+        if 'first_name' in body:
+            user.first_name = body['first_name']
+        if 'last_name' in body:
+            user.first_name = body['first_name']
+        if 'age' in body:
+            user.age = body['age']
+        if 'products' in body:
+            for id in body['products']:
+                product = Product.query.filter(Product.id == id).one_or_none()
+                user.products.append(product)
+
+        # Modify the movie values and update
+        user.update()
+
+        result = {
+            "success": True,
+            "user": user.format()
+        }
+
+        return jsonify(result)
+
+
     '''
     def detect_text(path):
         """Detects text in the file."""
@@ -74,277 +372,6 @@ def create_app(test_config=None):
                     response.error.message))
 
     '''
-
-    """GET /products
-      Gets all products in the database
-
-      Returns:
-          JSON Object -- json of all movies in the database
-    """
-    @app.route('/products')
-    #@requires_auth('get:products')
-    def get_products(payload):
-
-        try:
-            products = Product.query.order_by('id').all()
-            products_list = [Product.format(product) for product in products]
-            result = {
-              'success': True,
-              'products': products_list
-            }
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """GET /users
-      Gets all actors in the database
-
-      Returns:
-          JSON Object -- json of all actors in the database
-    """
-    @app.route('/users')
-    #@requires_auth('get:user')
-    def get_users(payload):
-
-        try:
-            users = User.query.order_by('id').all()
-            users = [user.format() for user in users]
-
-            result = ({
-              'success': True,
-              'users': users
-            })
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """POST /movies
-      Creates and adds a new movie to the database
-
-      Returns:
-          JSON Object -- json of movie added if the entry is successful
-    """
-    @app.route('/movies', methods=['POST'])
-    #@requires_auth('post:movies')
-    def new_recipe(payload):
-
-        # Get request json object
-        body = request.get_json()
-        title = body['title']
-        release_date = datetime.strptime(body['release_date'],
-                                         '%d-%m-%Y').date()
-        actors = []
-
-        # Try to insert the movie in the database
-        try:
-
-            if 'actors' in body:
-                for id in body['actors']:
-                    actor = Actor.query.filter(
-                        Actor.id == id).one_or_none()
-
-                    if actor:
-                        actors.append(actor)
-
-            movie_new = Movie(title=title,
-                              release_date=release_date,
-                              actors=[])
-            movie_new.actors = [a for a in actors]
-            movie_new.insert()
-
-            result = {
-                'success': True,
-                'movie': movie_new.title
-            }
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """POST /actors
-      Creates and adds a new actor to the database
-
-      Returns:
-          JSON Object -- json of actor added if the entry is successful
-    """
-    @app.route('/actors', methods=['POST'])
-    #@requires_auth('post:actors')
-    def new_actor(payload):
-
-        # Get json request objects
-        body = request.get_json()
-
-        name = body.get('name', None)
-        age = body.get('age', None)
-        gender = body.get('gender', None)
-        movies = []
-        # Try to insert the actor in the database
-        try:
-
-            # If movie_id was included in the post find the movie
-            if 'movies' in body:
-                for movie_id in body['movies']:
-                    movie = Movie.query.filter(
-                        Movie.id == movie_id).one_or_none()
-
-                if movie:
-                    movies.append(movie)
-
-            actor_new = Actor(name=name, age=age, gender=gender)
-            actor_new.movies_list = [m for m in movies]
-            actor_new.insert()
-
-            result = {
-              'success': True,
-              'actor': actor_new.format()
-            }
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """'DELETE /movies/<int:movie_id>
-        Deletes a movie from the database
-
-      Inputs:
-          int "movie_id"
-
-      Returns:
-          JSON Object -- json message if deletion is successful
-    """
-    @app.route('/products/<int:movie_id>', methods=['DELETE'])
-    #@requires_auth('delete:movies')
-    def delete_movie(payload, movie_id):
-
-        # Delete movie with submitted id from database
-        try:
-            # Find movie with movie_id
-            movie = Movie.query.filter(Movie.id == movie_id).one_or_none()
-
-            # if movie is none throw 404  
-            if movie is None:
-                abort(404)
-
-            # Delete the movie
-            movie.delete()
-
-            result = {
-                'success': True,
-                'message': 'Deleted Movie ID: ' + str(movie_id)
-            }
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """'DELETE /users/<int:actor_id>
-      Deletes an actor from the database
-
-      Inputs:
-          int "actor_id"
-
-      Returns:
-          JSON Object -- json message if deletion is successful
-    """
-    @app.route('/users/<int:actor_id>', methods=['DELETE'])
-    #@requires_auth('delete:actors')
-    def delete_actor(payload, actor_id):
-
-        # Delete actor with submitted id from database
-        try:
-
-            # Find actor with actor_id
-            actor = Actor.query.filter(Actor.id == actor_id).one_or_none()
-
-            # If actor is none throw 404
-            if actor is None:
-                abort(404)
-
-            # Delete the actor
-            actor.delete()
-
-            result = {
-                'success': True,
-                'message': 'Deleted Actor ID: ' + str(actor_id)
-            }
-
-        except:
-            abort(422)
-
-        return jsonify(result)
-
-    """PATCH /products/<int:product_id>
-      Edits a product in the database
-
-      Inputs:
-          int "product_id"
-
-      Returns:
-          JSON Object -- json message if edit is successful
-    """
-    @app.route('/recipes/<int:recipe_id>', methods=['PATCH'])
-    #@requires_auth('patch:recipes')
-    def edit_recipe(payload, recipe_id):
-
-        # Get the request info
-        body = request.get_json()
-
-        result = {
-            "success": True,
-            "recipe": 'FIXME!! Unimplemented'
-        }
-
-        return jsonify(result)
-
-    """PATCH /users/<int:user_id>
-      Edits an user in the database
-
-      Inputs:
-          int "user_id"
-
-      Returns:
-          JSON Object -- json message if edit is successful
-    """
-    @app.route('/users/<int:user_id>', methods=['PATCH'])
-    #@requires_auth('patch:actors')
-    def edit_user(payload, user_id):
-
-        # Get the request info
-        body = request.get_json()
-
-        # Check that actor id exists
-        user = User.query.filter_by(id=user_id).one_or_none()
-        if user is None:
-            abort(404)
-
-        # Check for updates to title and release date
-        if 'first_name' in body:
-            user.first_name = body['first_name']
-        if 'last_name' in body:
-            user.first_name = body['first_name']
-        if 'age' in body:
-            user.age = body['age']
-        if 'products' in body:
-            for id in body['products']:
-                product = Product.query.filter(Product.id == id).one_or_none()
-                user.products.append(product)
-
-        # Modify the movie values and update
-        user.update()
-
-        result = {
-            "success": True,
-            "user": user.format()
-        }
-
-        return jsonify(result)
 
     """
     Login Route
