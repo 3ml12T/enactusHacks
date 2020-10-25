@@ -1,14 +1,14 @@
 {% extends 'layouts/main.html' %}
-{% block title %}Productive | Jobs Search{% endblock %}
+{% block title %}MyFridge | User Search{% endblock %}
 {% block content %}
 <h3>Number of search results for "{{ search_term }}": {{ results.count }}</h3>
 <ul class="items">
-	{% for job in results.data %}
+	{% for user in results.data %}
 	<li>
-		<a href="/jobs/{{ job.id }}">
+		<a href="/users/{{ user.id }}">
 			<i class="fas fa-users"></i>
 			<div class="item">
-				<h5>{{ job.number }}</h5>
+				<h5>{{ user.first_name }} {{ users.last_name }}</h5>
 			</div>
 		</a>
 	</li>

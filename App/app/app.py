@@ -20,8 +20,9 @@ from .forms import *
 import sys
 
 
-def create_app(test_config=None):
 
+def create_app(test_config=None):
+    
     app = Flask(__name__)
     setup_db(app)
     CORS(app)
@@ -93,7 +94,11 @@ def create_app(test_config=None):
                              'GET, POST, DELETE, PATCH')
         return response
     
-
+    """Main Index Endpoint
+    
+        Return: returns home.html
+    """
+    
     @app.route('/')
     def home():
         return render_template('pages/home.html')
@@ -108,8 +113,8 @@ def create_app(test_config=None):
                 )
                 image_file.save(image_location)
                 pred = detect_text
-                return render_template("index.html", prediction=pred, image_name=image_file.filename)
-    return render_template("index.html", prediction=0, image_name=None)
+                return render_template("pages/home.html", prediction=pred, image_name=image_file.filename)
+        return render_template("pages/home.html", prediction=0, image_name=None)
 
 
     """GET /products
@@ -122,7 +127,7 @@ def create_app(test_config=None):
     #@requires_auth('get:products')
     def get_products():
 
-        data= Product.query.distinct(Product.name, Product.weight).order_by(Product.name.asc()).all()
+        data= Product.query.distinct().order_by(Product.name.desc()).all()
         
         return render_template('pages/products.html', products=data)
 
@@ -136,19 +141,21 @@ def create_app(test_config=None):
     #@requires_auth('get:user')
     def get_users():
 
-        try:
-            users = User.query.order_by('id').all()
-            users = [user.format() for user in users]
+        data= User.query.distinct().order_by(User.last_name.desc()).all()
+  
+        return render_template('pages/users.html', users=data)
 
-            result = ({
-              'success': True,
-              'users': users
-            })
+    @app.route('/users/search', methods=['POST'])
+    def search_artists():
+        
+        search_term = request.form.get('search_term',None)
+        artists = User.query.filter(User.name.ilike("%{}%".format(search_term))).all()
 
-        except:
-            abort(422)
+        response={
+            "count":len(users),
+            "data": user
+        }
 
-        return jsonify(result)
 
     """GET /products/create
       Creates and adds a new product to the database
@@ -169,44 +176,42 @@ def create_app(test_config=None):
           JSON Object -- json of movie added if the entry is successful
     """
     @app.route('/products', methods=['POST'])
-    #@requires_auth('post:product')
+    #@requires_auth('post:products')
     def new_product():
 
-        # Get request json object
-        body = request.get_json()
-        title = body['title']
-        release_date = datetime.strptime(body['release_date'],
-                                         '%d-%m-%Y').date()
-        actors = []
-
-        # Try to insert the movie in the database
+        form = ProductForm(request.form)
+        print(form)
+        error=False
         try:
-
-            if 'products' in body:
-                for id in body['products']:
-                    product = Product.query.filter(
-                        Product.id == id).one_or_none()
-
-                    if product:
-                        products.append(product)
-
-            product_new = Product(title=title,
-                              release_date=release_date,
-                              actors=[])
-            movie_new.actors = [a for a in actors]
-            movie_new.insert()
-
-            result = {
-                'success': True,
-                'movie': movie_new.title
-            }
-
+            product = Product(
+                name=form.name.data,
+                description=form.description.data,
+                weight=form.weight.data,
+                quantity=form.quanitity.data,
+                date_purchased=form.date_purchased.data
+            )
+            db.session.add(product)
+            db.session.commit()
+            # on successful db insert, flash success
+            flash('Product ' + request.form['name'] +  
+                ' was successfully listed!')
         except:
-            abort(422)
+            error = True
+            db.session.rollback()
+            print(sys.exc_info())
+            flash('An error occurred. Product ' + Product.name +
+                ' could not be listed.')
+        finally:
+            db.session.close()
+            
+        return render_template('pages/home.html')
+    
+    """GET /users
+      Creates and adds a new user to the database
 
-        return jsonify(result)
-
-
+      Returns:
+          web page
+    """
     @app.route('/users/create', methods=['GET'])
     def create_user_form():
         form = UserForm()   
@@ -216,7 +221,7 @@ def create_app(test_config=None):
       Creates and adds a new user to the database
 
       Returns:
-          JSON Object -- json of user added if the entry is successful
+          web page
     """
     @app.route('/users', methods=['POST'])
     #@requires_auth('post:user')
@@ -240,7 +245,7 @@ def create_app(test_config=None):
             error = True
             db.session.rollback()
             print(sys.exc_info())
-            flash('An error occurred. Artist ' + User.first_name +
+            flash('An error occurred. User ' + User.first_name +
                 User.last_name + ' could not be listed.')
         finally:
             db.session.close()
@@ -282,11 +287,11 @@ def create_app(test_config=None):
 
         return jsonify(result)
 
-    """'DELETE /users/<int:actor_id>
-      Deletes an actor from the database
+    """'DELETE /users/<int:user_id>
+      Deletes an user from the database
 
       Inputs:
-          int "actor_id"
+          int "user_id"
 
       Returns:
           JSON Object -- json message if deletion is successful
@@ -301,11 +306,11 @@ def create_app(test_config=None):
             # Find user with user_id
             user = User.query.filter(User.id == user_id).one_or_none()
 
-            # If actor is none throw 404
+            # If user is none throw 404
             if user is None:
                 abort(404)
 
-            # Delete the actor
+            # Delete the user
             user.delete()
 
             result = {
@@ -319,7 +324,7 @@ def create_app(test_config=None):
         return jsonify(result)
 
 
-    """POST /products/<int:product_id>
+    """GET /products/<int:product_id>
       Edits a recipe in the database
 
       Inputs:
@@ -328,8 +333,8 @@ def create_app(test_config=None):
       Returns:
           JSON Object -- json message if edit is successful
     """
-    @app.route('/products/<int:product_id>', methods=['POST'])
-    #@requires_auth('patch:product')
+    @app.route('/products/<int:product_id>', methods=['GET'])
+    #@requires_auth('post:product')
     def edit_product(product_id):
 
         form = ProductForm()
@@ -351,6 +356,40 @@ def create_app(test_config=None):
         
         return render_template('forms/edit_product.html', form=form, product=product)
     
+
+
+    """GET /products/<int:product_id>
+      Edits a recipe in the database
+
+      Inputs:
+          int "recipe_id"
+
+      Returns:
+          JSON Object -- json message if edit is successful
+    """
+    @app.route('/products/<int:product_id>/edit', methods=['POST'])
+    #@requires_auth('post:product')
+    def edit_product_submission(product_id):
+
+        form = ProductForm(request.form)
+        try:
+            product = Product.query.filter_by(id=product_id).one()
+            product.name=form.name.data
+            product.description=form.description.data
+            product.weight=form.weight.data
+            product.quantity = form.quantity.data
+            product.date_purchased = form.date_purchased.data
+
+            db.session.commit()
+            flash('Product ' + request.form['name'] + ' was updated successfully.')
+        
+        except:
+            db.session.rollback()
+            flash('An error occurred.  User ' + request.form['name'] + 
+             ' failed to update.')
+
+        return redirect(url_for('show_product', product_id=product_id))
+
     """GET /users/<int:user_id>/edit
       Edits an user in the database
 
