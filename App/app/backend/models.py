@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 from flask_migrate import Migrate
 
-database_name = "trivia"
+database_name = "myfridge"
 database_path = "postgresql://{}/{}".format('localhost:5432', database_name)
 
 db = SQLAlchemy()
@@ -14,30 +14,55 @@ setup_db(app)
     binds a flask application and a SQLAlchemy service
 '''
 def setup_db(app, database_path=database_path):
+    migrate = Migrate(app, db)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
     db.init_app(app)
     db.create_all()
 
-'''
-Product
+
+"""
+db_drop_and_create_all()
+    drops the database tables and starts fresh
+    can be used to initialize a clean database
+
+    Keyword arguments: n/a
+    argument -- n/a
+    Return: return_description
+"""
+def db_drop_and_create_all():
+    db.drop_all()
+    db.create_all()
+
+
+class MyFridge(db.Model):
+      
+      __tablename__ = 'fridge'
+      id = db.Column(db.Integer, primary_key=True)
+
 
 '''
-class Product(db.Model):  
-  __tablename__ = 'questions'
+User
+
+'''
+class User(db.Model):  
+  __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
-  name = Column(String)
-  weight = Column(String)
-  quantity = Column(String)
-  date_purchased = Column(Integer)
+  first_name = Column(String)
+  last_name = Column(String)
+  age = Column(Integer)
+  products = db.relationship('Product', backref='user', lazy=True)
+  current_products = Column()
+  past_products = Column()
+  date_registered = Column(Integer)
 
-  def __init__(self, question, answer, category, difficulty):
-    self.question = question
-    self.answer = answer
-    self.category = category
-    self.difficulty = difficulty
+  def __init__(self, question, weight, quantity, date_purchased):
+    self.name = question
+    self.weight = weight
+    self.quantity = quantity
+    self.date_purchased = date_purchased
 
   def insert(self):
     db.session.add(self)
@@ -53,27 +78,56 @@ class Product(db.Model):
   def format(self):
     return {
       'id': self.id,
-      'question': self.question,
-      'answer': self.answer,
-      'category': self.category,
-      'difficulty': self.difficulty
+      'name': self.name,
+      'weight': self.weight,
+      'quantity': self.quantity,
+      'date_purchased': self.date_purchased
     }
 
-'''
-Category
+  def __repr__(self):
+        return f'<User {self.id}: {self.last_name}, {self.first_name}>'
+
 
 '''
-class Category(db.Model):  
-  __tablename__ = 'categories'
+Product
+
+'''
+class Product(db.Model):  
+  __tablename__ = 'products'
 
   id = Column(Integer, primary_key=True)
-  type = Column(String)
+  name = Column(String)
+  weight = Column(String)
+  quantity = Column(String)
+  date_purchased = Column(Integer)
 
-  def __init__(self, type):
-    self.type = type
+  def __init__(self, name, weight, quantity, date_purchased, description=''):
+    self.name = name
+    self.description = description
+    self.weight = weight
+    self.quantity = quantity
+    self.date_purchased = date_purchased
+
+  def insert(self):
+    db.session.add(self)
+    db.session.commit()
+  
+  def update(self):
+    db.session.commit()
+
+  def delete(self):
+    db.session.delete(self)
+    db.session.commit()
 
   def format(self):
     return {
       'id': self.id,
-      'type': self.type
+      'name': self.name,
+      'weight': self.weight,
+      'quantity': self.quantity,
+      'date_purchased': self.date_purchased
     }
+
+  def __repr__(self):
+        return f'<Product {self.id}: {self.last_name}, {self.first_name}>'
+
