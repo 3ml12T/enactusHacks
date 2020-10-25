@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, request, abort, jsonify, redirect
 from flask import url_for, render_template
@@ -11,15 +12,18 @@ from datetime import datetime, date
 import json
 import logging
 from six.moves.urllib.parse import urlencode
-
+from google.cloud import vision
+import io
 
 def create_app(test_config=None):
 
     app = Flask(__name__)
     setup_db(app)
     CORS(app)
-    app.secret_key = os.environ['SECRET']
+    #app.secret_key = os.environ['SECRET']
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=r"C:\Users\shahd\OneDrive\Desktop\MediDate Application\MediDate_Credentials\steel-aileron-266916-d88c69f449c7.json"
 
+    '''
     @app.after_request
     def after_request(response):
         response.headers.add('Access-Control-Allow-Headers',
@@ -27,12 +31,49 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Methods',
                              'GET, POST, DELETE, PATCH')
         return response
-
+    '''
     @app.route('/')
     def home():
         home_msg = 'MyFridge App - Eat Clean, Clean Earth'
         return jsonify(home_msg)
+    '''
+    def detect_text(path):
+        """Detects text in the file."""
+    # Imports the Google Cloud client library
+        client = vision.ImageAnnotatorClient()
 
+        with io.open(path, 'rb') as image_file:
+            content = image_file.read()
+
+        image = vision.types.Image(content=content)
+
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+        d = {"Name": 0, "Fill Date": 0, "RX": 0, "Qty": 90, "date-to-take": 0, "Red": 0, "Blue": 0,"Green": 0}
+        count = 0
+        for text in texts:
+            if(text.description == "Rx" or text.description == "Rx#" or text.description == "#" or text.description == "Rx:" or text.description == "Rx:#" or text.description == "Rx: #" or text.description == ":"):
+                count = 1
+                continue
+            if(text.description[0:2] == "Qty"):
+                d["Qty"] = text.description[3:len(text.description)-1]
+                
+            if(count == 1):
+                d["RX"] = text.description
+                count = 0
+            vertices = (['({},{})'.format(vertex.x, vertex.y)
+                        for vertex in text.bounding_poly.vertices])
+
+            print('bounds: {}'.format(','.join(vertices)))
+        return d
+
+        if response.error.message:
+            raise Exception(
+                '{}\nFor more info on error messages, check: '
+                'https://cloud.google.com/apis/design/errors'.format(
+                    response.error.message))
+
+    '''
     """GET /movies
       Gets all products in the database
 
@@ -40,7 +81,7 @@ def create_app(test_config=None):
           JSON Object -- json of all movies in the database
     """
     @app.route('/products')
-    @requires_auth('get:products')
+    #@requires_auth('get:products')
     def get_products(payload):
 
         try:
@@ -63,11 +104,11 @@ def create_app(test_config=None):
           JSON Object -- json of all actors in the database
     """
     @app.route('/actors')
-    @requires_auth('get:user')
+    #@requires_auth('get:user')
     def get_user(payload):
 
         try:
-            actors = Actor.query.order_by('id').all()
+            actors = User.query.order_by('id').all()
             actors = [actor.format() for actor in actors]
 
             result = ({
@@ -87,8 +128,8 @@ def create_app(test_config=None):
           JSON Object -- json of movie added if the entry is successful
     """
     @app.route('/movies', methods=['POST'])
-    @requires_auth('post:movies')
-    def new_movie(payload):
+    #@requires_auth('post:movies')
+    def new_recipe(payload):
 
         # Get request json object
         body = request.get_json()
@@ -131,7 +172,7 @@ def create_app(test_config=None):
           JSON Object -- json of actor added if the entry is successful
     """
     @app.route('/actors', methods=['POST'])
-    @requires_auth('post:actors')
+    #@requires_auth('post:actors')
     def new_actor(payload):
 
         # Get json request objects
@@ -176,13 +217,12 @@ def create_app(test_config=None):
       Returns:
           JSON Object -- json message if deletion is successful
     """
-    @app.route('/movies/<int:movie_id>', methods=['DELETE'])
-    @requires_auth('delete:movies')
+    @app.route('/products/<int:movie_id>', methods=['DELETE'])
+    #@requires_auth('delete:movies')
     def delete_movie(payload, movie_id):
 
         # Delete movie with submitted id from database
         try:
-
             # Find movie with movie_id
             movie = Movie.query.filter(Movie.id == movie_id).one_or_none()
 
@@ -203,7 +243,7 @@ def create_app(test_config=None):
 
         return jsonify(result)
 
-    """'DELETE /actors/<int:actor_id>
+    """'DELETE /users/<int:actor_id>
       Deletes an actor from the database
 
       Inputs:
@@ -212,8 +252,8 @@ def create_app(test_config=None):
       Returns:
           JSON Object -- json message if deletion is successful
     """
-    @app.route('/actors/<int:actor_id>', methods=['DELETE'])
-    @requires_auth('delete:actors')
+    @app.route('/users/<int:actor_id>', methods=['DELETE'])
+    #@requires_auth('delete:actors')
     def delete_actor(payload, actor_id):
 
         # Delete actor with submitted id from database
@@ -239,18 +279,18 @@ def create_app(test_config=None):
 
         return jsonify(result)
 
-    """PATCH /movies/<int:movie_id>
-      Edits a movie in the database
+    """PATCH /products/<int:product_id>
+      Edits a product in the database
 
       Inputs:
-          int "movie_id"
+          int "product_id"
 
       Returns:
           JSON Object -- json message if edit is successful
     """
-    @app.route('/movies/<int:movie_id>', methods=['PATCH'])
-    @requires_auth('patch:movies')
-    def edit_movie(payload, movie_id):
+    @app.route('/recipes/<int:recipe_id>', methods=['PATCH'])
+    #@requires_auth('patch:recipes')
+    def edit_recipe(payload, recipe_id):
 
         # Get the request info
         body = request.get_json()
@@ -290,7 +330,7 @@ def create_app(test_config=None):
           JSON Object -- json message if edit is successful
     """
     @app.route('/actors/<int:actor_id>', methods=['PATCH'])
-    @requires_auth('patch:actors')
+    #@requires_auth('patch:actors')
     def edit_actor(payload, actor_id):
 
         # Get the request info
@@ -328,6 +368,7 @@ def create_app(test_config=None):
 
     The login route redirects to the Auth0 login page
     """
+    '''
     @app.route('/login')
     def login():
         link = 'https://'
@@ -357,7 +398,7 @@ def create_app(test_config=None):
         link += 'returnTo=' + os.environ['CALLBACK_URL']
 
         return redirect(link)
-
+    '''
 # ---------------------------------------------------------------------------#
 # Errors.
 # ---------------------------------------------------------------------------#
@@ -424,7 +465,7 @@ def create_app(test_config=None):
             'error': 500,
             'message': 'internal server error'
         }), 500
-
+    
     # ERROR - AUTHENTICATION ERROR
     @app.errorhandler(AuthError)
     def auth_error(error):
@@ -433,7 +474,7 @@ def create_app(test_config=None):
             "error": error.status_code,
             "message": error.error
         }), error.status_code
-
+    
     return app
 
 # ----------------------------------------------------------------------------#
@@ -447,4 +488,4 @@ app = create_app()
 # Run App
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='127.0.0.1', port=8080)

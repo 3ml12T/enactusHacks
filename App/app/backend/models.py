@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import Column, String, Integer, create_engine
+from sqlalchemy import Column, String, Integer, DateTime, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
 from flask_migrate import Migrate
@@ -8,17 +8,18 @@ database_name = "myfridge"
 database_path = "postgresql://{}/{}".format('localhost:5432', database_name)
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 '''
 setup_db(app)
     binds a flask application and a SQLAlchemy service
 '''
 def setup_db(app, database_path=database_path):
-    migrate = Migrate(app, db)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
     db.init_app(app)
+    migrate.init_app(app, db)
     db.create_all()
 
 
@@ -41,11 +42,10 @@ User-Product association table
 '''
 user_products = db.Table('user_products',     
       db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-      db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True)
+      db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True))
 
 '''
 User
-
 '''
 class User(db.Model):  
   __tablename__ = 'users'
@@ -55,9 +55,9 @@ class User(db.Model):
   last_name = Column(String)
   age = Column(Integer)
   products = db.relationship('Product', backref='user', lazy=True)
-  current_products = Column()
-  past_products = Column()
-  date_registered = Column(Integer)
+  current_products = Column(String)
+  past_products = Column(DateTime)
+  date_registered = Column(DateTime)
 
   def __init__(self, question, weight, quantity, date_purchased):
     self.name = question
