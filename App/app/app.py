@@ -6,8 +6,8 @@ from flask import session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
-from models import *
-from auth import AuthError, requires_auth
+from .database.models import *
+from .auth.auth import AuthError, requires_auth
 from datetime import datetime, date
 import json
 import logging
@@ -74,7 +74,8 @@ def create_app(test_config=None):
                     response.error.message))
 
     '''
-    """GET /movies
+
+    """GET /products
       Gets all products in the database
 
       Returns:
@@ -86,10 +87,10 @@ def create_app(test_config=None):
 
         try:
             products = Product.query.order_by('id').all()
-            movies_list = [Movie.format(movie) for movie in movies]
+            products_list = [Product.format(product) for product in products]
             result = {
               'success': True,
-              'movies': movies_list
+              'products': products_list
             }
 
         except:
@@ -97,23 +98,23 @@ def create_app(test_config=None):
 
         return jsonify(result)
 
-    """GET /actors
+    """GET /users
       Gets all actors in the database
 
       Returns:
           JSON Object -- json of all actors in the database
     """
-    @app.route('/actors')
+    @app.route('/users')
     #@requires_auth('get:user')
-    def get_user(payload):
+    def get_users(payload):
 
         try:
-            actors = User.query.order_by('id').all()
-            actors = [actor.format() for actor in actors]
+            users = User.query.order_by('id').all()
+            users = [user.format() for user in users]
 
             result = ({
               'success': True,
-              'actors': actors
+              'users': users
             })
 
         except:
@@ -295,70 +296,52 @@ def create_app(test_config=None):
         # Get the request info
         body = request.get_json()
 
-        # Check that movie id exists
-        movie = Movie.query.filter_by(id=movie_id).one_or_none()
-        if movie is None:
-            abort(404)
-
-        # Check for updates to title and release date
-        if 'title' in body:
-            movie.title = body['title']
-        if 'release_date' in body:
-            movie.release_date = body['release_date']
-        if 'actors' in body:
-            for id in body['actors']:
-                actor = Actor.query.filter(Actor.id == id).one_or_none()
-                movie.actors.append(actor)
-
-        # Modify the movie values and update
-        movie.update()
-
         result = {
             "success": True,
-            "movie": movie.format()
+            "recipe": 'FIXME!! Unimplemented'
         }
 
         return jsonify(result)
 
-    """PATCH /actors/<int:actor_id>
-      Edits an actor in the database
+    """PATCH /users/<int:user_id>
+      Edits an user in the database
 
       Inputs:
-          int "actor_id"
+          int "user_id"
 
       Returns:
           JSON Object -- json message if edit is successful
     """
-    @app.route('/actors/<int:actor_id>', methods=['PATCH'])
+    @app.route('/users/<int:user_id>', methods=['PATCH'])
     #@requires_auth('patch:actors')
-    def edit_actor(payload, actor_id):
+    def edit_user(payload, user_id):
 
         # Get the request info
         body = request.get_json()
 
         # Check that actor id exists
-        actor = Actor.query.filter_by(id=actor_id).one_or_none()
-        if actor is None:
+        user = User.query.filter_by(id=user_id).one_or_none()
+        if user is None:
             abort(404)
 
         # Check for updates to title and release date
-        if 'name' in body:
-            actor.name = body['name']
+        if 'first_name' in body:
+            user.first_name = body['first_name']
+        if 'last_name' in body:
+            user.first_name = body['first_name']
         if 'age' in body:
-            actor.age = body['age']
-        if 'gender' in body:
-            actor.gender = body['gender']
-        if 'movies' in body:
-            for id in body['movies']:
-                movie = Movie.query.filter(Movie.id == id).one_or_none()
-                actor.movies_list.append(movie)
+            user.age = body['age']
+        if 'products' in body:
+            for id in body['products']:
+                product = Product.query.filter(Product.id == id).one_or_none()
+                user.products.append(product)
 
         # Modify the movie values and update
-        actor.update()
+        user.update()
 
         result = {
             "success": True,
-            "actor": actor.format()
+            "user": user.format()
         }
 
         return jsonify(result)

@@ -1,25 +1,25 @@
 {% extends 'layouts/main.html' %}
-{% block title %}Productive{% endblock %}
+{% block title %}MyFridge{% endblock %}
 {% block content %}
 <div class="row">
 	<div class="col-sm-6">
-		<h1>Productive 📈</h1>
+		<h1>MyFridge 📈</h1>
 		<p class="lead">Company productivity for the 21st century.</p>
 		<h3>
-			<a href="/customers"><button class="btn btn-primary btn-lg">Find a customer</button></a>
-			<a href="/customers/create"><button class="btn btn-default btn-lg">Add a customer</button></a>
+			<a href="/recipes"><button class="btn btn-primary btn-lg">Find a customer</button></a>
+			<a href="/recipes/create"><button class="btn btn-default btn-lg">Add a customer</button></a>
 		</h3>
 		<h3>
-			<a href="/employees"><button class="btn btn-primary btn-lg">Find an employee</button></a>
-			<a href="/employees/create"><button class="btn btn-default btn-lg">Add an employee</button></a>
+			<a href="/users"><button class="btn btn-primary btn-lg">Find an employee</button></a>
+			<a href="/users/create"><button class="btn btn-default btn-lg">Add an employee</button></a>
 		</h3>
 		<h3>
-			<a href="/jobs"><button class="btn btn-primary btn-lg">Find a job number</button></a>
-			<a href="/jobs/create"><button class="btn btn-default btn-lg">Add a job</button></a>
+			<a href="/products"><button class="btn btn-primary btn-lg">Find a product</button></a>
+			<a href="/products/create"><button class="btn btn-default btn-lg">Add a product</button></a>
 		</h3>
 	</div>
 	<div class="col-sm-6 hidden-sm hidden-xs">
-		<img id="front-splash" src="{{ url_for('static',filename='img/productive-front-splash.jpg') }}" alt="Front Photo of Productive App" />
+		<img id="front-splash" src="{{ url_for('static',filename='img/myfridge-splash.png') }}" alt="Front Photo of Productive App" />
 	</div>
 </div>
 {% endblock %}

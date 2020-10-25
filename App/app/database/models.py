@@ -1,5 +1,6 @@
 import os
-from sqlalchemy import Column, String, Integer, DateTime, create_engine
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, \
+  Table, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
 from flask_migrate import Migrate
@@ -40,9 +41,11 @@ def db_drop_and_create_all():
 '''
 User-Product association table
 '''
-user_products = db.Table('user_products',     
-      db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-      db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True))
+user_products = Table('user_products', db.Model.metadata,    
+      Column('user_id', Integer, ForeignKey('users.id',
+        onupdate='CASCADE', ondelete='CASCADE'), primary_key=True),
+      Column('product_id', Integer, ForeignKey('products.id',
+        onupdate='CASCADE', ondelete='CASCADE'), primary_key=True))
 
 '''
 User
@@ -51,19 +54,22 @@ class User(db.Model):
   __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
-  first_name = Column(String)
-  last_name = Column(String)
+  first_name = Column(String, nullable=False)
+  last_name = Column(String, nullable=False)
   age = Column(Integer)
-  products = db.relationship('Product', backref='user', lazy=True)
+  products = db.relationship('Product', secondary='user_products',
+                            backref=db.backref('users', lazy=True))
   current_products = Column(String)
-  past_products = Column(DateTime)
+  past_products = Column(String)
   date_registered = Column(DateTime)
 
-  def __init__(self, question, weight, quantity, date_purchased):
-    self.name = question
-    self.weight = weight
-    self.quantity = quantity
-    self.date_purchased = date_purchased
+  def __init__(self, first_name, last_name, age):
+    self.first_name = first_name
+    self.last_name = last_name
+    self.age = age
+    self.current_products={}
+    self.past_products={}
+
 
   def insert(self):
     db.session.add(self)
